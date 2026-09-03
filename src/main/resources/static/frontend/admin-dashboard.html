@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FRM | Fraud Risk Monitoring</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand"><div class="brand-mark">FR</div><div><strong>FRM</strong><small>Payment Security</small></div></div>
+      <nav><a class="nav-link active" href="admin-dashboard.html">⌁ <span>Fraud Monitoring</span></a></nav>
+      <div class="sidebar-bottom">
+        <div class="user-mini"><div class="avatar" id="sidebarAvatar">A</div><div><strong id="sidebarName">Admin</strong><small id="sidebarRole">ADMIN</small></div></div>
+        <button class="nav-link logout-btn" id="logoutButton">↪ <span>Logout</span></button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <button class="icon-btn mobile-menu" id="menuButton">☰</button>
+        <div><span class="eyebrow">ADMIN CONSOLE</span><h1>Fraud Risk Monitoring</h1></div>
+        <div class="topbar-user"><div class="avatar" id="topAvatar">A</div></div>
+      </header>
+
+      <div id="adminAlert" class="alert hidden"></div>
+
+      <section class="stats-grid">
+        <div class="stat-card"><span class="stat-label">Total Transactions</span><strong id="totalCount">—</strong><span class="stat-meta">All monitored payments</span></div>
+        <div class="stat-card success-card"><span class="stat-label">Successful</span><strong id="successCount">—</strong><span class="stat-meta">Risk score &lt; 75</span></div>
+        <div class="stat-card failed-card"><span class="stat-label">Failed</span><strong id="failedCount">—</strong><span class="stat-meta">Risk score 75–99</span></div>
+        <div class="stat-card blocked-card"><span class="stat-label">Blocked</span><strong id="blockedCount">—</strong><span class="stat-meta">Risk score ≥ 100</span></div>
+        <div class="stat-card risk-card"><span class="stat-label">High Risk</span><strong id="highRiskCount">—</strong><span class="stat-meta">Risk score ≥ 75</span></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header monitoring-header">
+          <div><span class="eyebrow">LIVE DATA</span><h2>Transaction Monitoring</h2></div>
+          <button class="btn btn-secondary" id="refreshTransactions">↻ Refresh</button>
+        </div>
+
+        <div class="filters">
+          <div class="search-box"><span>⌕</span><input id="searchInput" type="search" placeholder="Search ID, user, email, location..."></div>
+          <select id="statusFilter"><option value="ALL">All statuses</option><option value="SUCCESS">Success</option><option value="FAILED">Failed</option><option value="BLOCKED">Blocked</option></select>
+          <select id="riskSort"><option value="NONE">Risk: default</option><option value="DESC">Risk: high → low</option><option value="ASC">Risk: low → high</option></select>
+          <select id="dateSort"><option value="DESC">Date: newest first</option><option value="ASC">Date: oldest first</option></select>
+        </div>
+
+        <div id="tableLoading" class="loading-state"><span class="spinner"></span><span>Loading transactions…</span></div>
+        <div id="tableEmpty" class="empty-state hidden"><div class="empty-icon">⌁</div><h3>No transactions found</h3><p>Try changing your search or filters.</p></div>
+        <div class="table-wrap" id="transactionsTableWrap">
+          <table>
+            <thead><tr><th>Transaction ID</th><th>User</th><th>Email</th><th>Amount</th><th>Location</th><th>Risk Score</th><th>Triggered Rules</th><th>Status</th><th>Date/Time</th></tr></thead>
+            <tbody id="transactionsBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/admin-dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>FRM | User Dashboard</title>
+
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+  <div class="app-shell">
+
+    <!-- =========================
+         SIDEBAR
+    ========================== -->
+
+    <aside class="sidebar" id="sidebar">
+
+      <div class="sidebar-brand">
+        <div class="brand-mark">FR</div>
+
+        <div>
+          <strong>FRM</strong>
+          <small>Payment Security</small>
+        </div>
+      </div>
+
+      <nav>
+        <a class="nav-link active" href="user-dashboard.html">
+          ⌂
+          <span>Dashboard</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-bottom">
+
+        <div class="user-mini">
+
+          <div class="avatar" id="sidebarAvatar">
+            U
+          </div>
+
+          <div>
+            <strong id="sidebarName">User</strong>
+            <small id="sidebarRole">USER</small>
+          </div>
+
+        </div>
+
+        <button class="nav-link logout-btn" id="logoutButton">
+          ↪
+          <span>Logout</span>
+        </button>
+
+      </div>
+
+    </aside>
+
+
+    <!-- =========================
+         MAIN CONTENT
+    ========================== -->
+
+    <main class="main-content">
+
+
+      <!-- TOP BAR -->
+
+      <header class="topbar">
+
+        <button class="icon-btn mobile-menu" id="menuButton">
+          ☰
+        </button>
+
+        <div>
+
+          <span class="eyebrow">
+            USER PORTAL
+          </span>
+
+          <h1>
+            Good to see you,
+            <span id="welcomeName">User</span>
+          </h1>
+
+        </div>
+
+        <div class="topbar-user">
+
+          <div class="avatar" id="topAvatar">
+            U
+          </div>
+
+        </div>
+
+      </header>
+
+
+      <!-- GLOBAL ALERT -->
+
+      <div id="globalAlert" class="alert hidden"></div>
+
+
+      <!-- =========================
+           DASHBOARD TOP SECTION
+      ========================== -->
+
+      <section class="dashboard-grid user-grid">
+
+
+        <!-- PAYMENT PANEL -->
+
+        <div class="panel payment-panel">
+
+          <div class="panel-header">
+
+            <div>
+
+              <span class="eyebrow">
+                SECURE TRANSFER
+              </span>
+
+              <h2>
+                Make Payment
+              </h2>
+
+            </div>
+
+            <span class="live-dot">
+              SECURE
+            </span>
+
+          </div>
+
+
+          <form id="paymentForm" novalidate>
+
+            <div class="form-grid">
+
+
+              <!-- AMOUNT -->
+
+              <div class="field">
+
+                <label for="amount">
+                  Amount
+                </label>
+
+                <div class="input-prefix">
+
+                  <span>₹</span>
+
+                  <input
+                    id="amount"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    placeholder="1,000"
+                    required
+                  >
+
+                </div>
+
+              </div>
+
+
+              <!-- PIN -->
+
+              <div class="field">
+
+                <label for="pin">
+                  Payment PIN
+                </label>
+
+                <input
+                  id="pin"
+                  type="password"
+                  inputmode="numeric"
+                  maxlength="8"
+                  autocomplete="off"
+                  placeholder="Enter PIN"
+                  required
+                >
+
+              </div>
+
+            </div>
+
+
+            <!-- PAYMENT BUTTON -->
+
+            <button
+              class="btn btn-primary"
+              id="paymentButton"
+              type="submit"
+            >
+
+              <span class="button-text">
+                Make Payment
+              </span>
+
+              <span class="spinner hidden"></span>
+
+            </button>
+
+
+            <!-- LOCATION STATUS -->
+
+            <div
+              id="locationStatus"
+              class="location-status"
+            >
+              📍 Detecting your location...
+            </div>
+
+
+ 
+
+          </form>
+
+        </div>
+
+
+        <!-- =========================
+             RISK ENGINE PANEL
+        ========================== -->
+
+         
+
+      </section>
+
+
+      <!-- =========================
+           PAYMENT RESULT
+      ========================== -->
+
+      <section
+        id="paymentResult"
+        class="panel result-panel hidden"
+      ></section>
+
+
+      <!-- =========================
+           TRANSACTION HISTORY
+      ========================== -->
+
+      <section class="panel">
+
+        <div class="panel-header">
+
+          <div>
+
+            <span class="eyebrow">
+              ACTIVITY
+            </span>
+
+            <h2>
+              Recent Transactions
+            </h2>
+
+          </div>
+
+
+          <button
+            class="btn btn-secondary"
+            id="refreshHistory"
+            type="button"
+          >
+            Refresh
+          </button>
+
+        </div>
+
+
+        <!-- TRANSACTION TABLE -->
+
+        <div
+          class="table-wrap"
+          id="historyTableWrap"
+        >
+
+          <table>
+
+            <thead>
+
+              <tr>
+
+                <th>
+                  Transaction ID
+                </th>
+
+                <th>
+                  Amount
+                </th>
+
+                <th>
+                  Location
+                </th>
+
+                <th>
+                  Status
+                </th>
+
+                <th>
+                  Date / Time
+                </th>
+
+              </tr>
+
+            </thead>
+
+
+            <tbody id="historyBody">
+
+              <tr>
+
+                <td
+                  colspan="5"
+                  style="text-align: center;"
+                >
+                  Loading your transactions...
+                </td>
+
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+
+        <!-- EMPTY STATE -->
+
+        <div
+          id="historyEmpty"
+          class="empty-state hidden"
+        >
+          No transactions found.
+        </div>
+
+      </section>
+
+
+    </main>
+
+  </div>
+
+
+  <!-- =========================
+       JAVASCRIPT
+  ========================== -->
+
+  <script src="js/api.js"></script>
+
+  <script src="js/auth.js"></script>
+
+  <script src="js/user-dashboard.js"></script>
+
+</body>
+
+</html>

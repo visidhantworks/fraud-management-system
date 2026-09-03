@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FRM | Secure Login</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="auth-page">
+  <main class="auth-shell">
+    <section class="auth-brand">
+      <div class="brand-mark">FR</div>
+      <div>
+        <span class="eyebrow">PAYMENT SECURITY</span>
+        <h1>Fraud Risk<br>Management</h1>
+        <p>Secure payments with real-time fraud risk monitoring.</p>
+      </div>
+      <div class="auth-feature-list">
+ 
+      </div>
+    </section>
+
+    <section class="auth-card">
+      <div class="mobile-brand"><div class="brand-mark">FR</div><strong>Fraud Risk Management</strong></div>
+      <div class="section-heading">
+        <span class="eyebrow">WELCOME BACK</span>
+        <h2>Sign in</h2>
+        <p>Enter your credentials to access the payment platform.</p>
+      </div>
+
+      <form id="loginForm" novalidate>
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="username" placeholder="user1@test.com" required>
+
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" placeholder="••••••••" required>
+
+        <div id="loginError" class="alert alert-error hidden" role="alert"></div>
+        <button id="loginButton" class="btn btn-primary btn-full" type="submit">
+          <span class="button-text">Sign In</span>
+          <span class="spinner hidden"></span>
+        </button>
+      </form>
+
+ 
+    </section>
+  </main>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>
