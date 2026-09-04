@@ -7,8 +7,11 @@ import com.sidhant.fraudmanagement.repository.FraudRuleRepository;
 import org.springframework.stereotype.Service;
 import com.sidhant.fraudmanagement.repository.TransactionRepository;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
-
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.math.BigDecimal;
 
 @Service
@@ -99,7 +102,7 @@ public class FraudRiskService {
 
     return 0;
 }
-    public int calculateLocationRisk(Long userId, Double latitude, Double longitude) {
+public int calculateLocationRisk(Long userId, Double latitude, Double longitude) {
 
     if (latitude == null || longitude == null) {
         return 0;
@@ -113,25 +116,76 @@ public class FraudRiskService {
         return 0;
     }
 
+    FraudRule bucketRule = fraudRuleRepository
+            .findByRuleCodeAndEnabledTrue("LOCATION_BUCKET_RADIUS")
+            .orElse(null);
+
+    if (bucketRule == null || bucketRule.getThreshold() == null) {
+        return 0;
+    }
+
     List<Transaction> previousTransactions =
-            transactionRepository.findByUserIdOrderByCreatedAtDesc(userId);
+            transactionRepository.findTop20ByUserIdOrderByCreatedAtDesc(userId);
 
     if (previousTransactions.isEmpty()) {
         return 0;
     }
 
-    Transaction previousTransaction = previousTransactions.get(0);
+    double bucketRadius = bucketRule.getThreshold().doubleValue();
 
-    if (previousTransaction.getLatitude() == null ||
-            previousTransaction.getLongitude() == null) {
+    Map<Location, Integer> locationBuckets = new HashMap<>();
+
+    for (Transaction transaction : previousTransactions) {
+
+        if (transaction.getLatitude() == null ||
+                transaction.getLongitude() == null) {
+            continue;
+        }
+
+        Location currentLocation = new Location(
+                transaction.getLatitude(),
+                transaction.getLongitude()
+        );
+
+        Location matchingBucket = null;
+
+        for (Location bucketLocation : locationBuckets.keySet()) {
+
+            double distance = calculateDistance(
+                    currentLocation.latitude(),
+                    bucketLocation.latitude(),
+                    currentLocation.longitude(),
+                    bucketLocation.longitude()
+            );
+
+            if (distance <= bucketRadius) {
+                matchingBucket = bucketLocation;
+                break;
+            }
+        }
+
+        if (matchingBucket != null) {
+            locationBuckets.merge(matchingBucket, 1, Integer::sum);
+        } else {
+            locationBuckets.put(currentLocation, 1);
+        }
+    }
+
+    Location dominantLocation = locationBuckets.entrySet()
+            .stream()
+            .max(Map.Entry.comparingByValue())
+            .map(Map.Entry::getKey)
+            .orElse(null);
+
+    if (dominantLocation == null) {
         return 0;
     }
 
     double distance = calculateDistance(
             latitude,
+            dominantLocation.latitude(),
             longitude,
-            previousTransaction.getLatitude(),
-            previousTransaction.getLongitude()
+            dominantLocation.longitude()
     );
 
     if (distance > rule.getThreshold().doubleValue()) {
@@ -139,7 +193,7 @@ public class FraudRiskService {
     }
 
     return 0;
-    }
+}
     private double calculateDistance(Double lat1 , Double lat2 , Double lon1 , Double lon2){
 
     final double EARTH_RADIUS_KM = 6371.0;

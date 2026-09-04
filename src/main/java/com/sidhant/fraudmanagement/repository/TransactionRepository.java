@@ -19,6 +19,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
         LocalDateTime time
      );
      List<Transaction> findByUserIdOrderByCreatedAtDesc(Long userId);
+     List<Transaction> findTop20ByUserIdOrderByCreatedAtDesc(Long userId);
      List<Transaction> findAllByOrderByCreatedAtDesc();
 
 }
