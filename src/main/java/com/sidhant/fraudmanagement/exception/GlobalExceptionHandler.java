@@ -16,7 +16,10 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(Map.of("error", exception.getMessage()));
+                .body(Map.of(
+                        "code", "INVALID_PIN",
+                        "error", exception.getMessage()
+                ));
     }
 
     @ExceptionHandler(TransactionFailedException.class)
@@ -25,7 +28,10 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("error", exception.getMessage()));
+                .body(Map.of(
+                        "code", "PAYMENT_FAILED",
+                        "error", exception.getMessage()
+                ));
     }
 
     @ExceptionHandler(TransactionBlockedException.class)
@@ -34,7 +40,10 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
-                .body(Map.of("error", exception.getMessage()));
+                .body(Map.of(
+                        "code", "PAYMENT_BLOCKED",
+                        "error", exception.getMessage()
+                ));
     }
 
     @ExceptionHandler(UserNotFoundException.class)
@@ -43,7 +52,10 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
-                .body(Map.of("error", exception.getMessage()));
+                .body(Map.of(
+                        "code", "USER_NOT_FOUND",
+                        "error", exception.getMessage()
+                ));
     }
 
     @ExceptionHandler(AdminPaymentException.class)
@@ -52,6 +64,21 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
-                .body(Map.of("error", exception.getMessage()));
+                .body(Map.of(
+                        "code", "ADMIN_PAYMENT_NOT_ALLOWED",
+                        "error", exception.getMessage()
+                ));
+    }
+
+    @ExceptionHandler(ActiveSessionException.class)
+    public ResponseEntity<Map<String, String>> handleActiveSession(
+            ActiveSessionException exception) {
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(Map.of(
+                        "code", "ACTIVE_SESSION",
+                        "error", exception.getMessage()
+                ));
     }
 }

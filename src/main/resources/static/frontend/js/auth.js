@@ -19,10 +19,24 @@ function getCurrentUser() {
     return null;
   }
 }
+async function logout() {
 
-function logout() {
-  clearAuthStorage();
-  location.href = "login.html";
+  try {
+
+    await API.logout();
+
+    clearAuthStorage();
+
+    location.href = "login.html";
+
+  } catch (error) {
+
+    console.error("Logout failed:", error);
+
+    alert(error.message || "Logout failed.");
+
+  }
+
 }
 
 function requireAuth(requiredRole = null) {

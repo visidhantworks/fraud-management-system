@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   setAdminIdentity(user);
   bindControls();
   await loadTransactions();
+   
 });
 
 function setAdminIdentity(user) {
@@ -19,6 +20,7 @@ function setAdminIdentity(user) {
   document.getElementById("sidebarAvatar").textContent = initial;
   document.getElementById("topAvatar").textContent = initial;
 }
+ 
 
 function bindControls() {
   document.getElementById("searchInput").addEventListener("input", renderFiltered);

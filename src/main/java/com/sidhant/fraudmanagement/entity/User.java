@@ -30,6 +30,8 @@ public class User {
     private UserRole role;
     @Column(name = "password_hash")
     private String passwordHash;
+    @Column(name = "transaction_locked_until")
+    private LocalDateTime transactionLockedUntil;
 
     public User() {
     }
@@ -92,5 +94,11 @@ public class User {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+    public LocalDateTime getTransactionLockedUntil() {
+    return transactionLockedUntil;
+    }
+    public void setTransactionLockedUntil(LocalDateTime transactionLockedUntil) {
+    this.transactionLockedUntil = transactionLockedUntil;
     }
 }

@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupPayment();
   getUserLocation();
   setupHistory();
+   
 });
 
 function setIdentity(user) {
@@ -24,6 +25,7 @@ function setIdentity(user) {
   const role = document.getElementById("sidebarRole");
   if (role) role.textContent = user.role || "USER";
 }
+
 
 function setupPayment() {
   console.log("SETUP PAYMENT STARTED");
@@ -98,19 +100,30 @@ function renderPaymentError(error) {
   let message = error.message;
 
   if (error.status === 403) {
-    title = "Payment Blocked / Unauthorized";
-    message = "The backend rejected this transaction. The frontend does not override fraud decisions.";
-  } else if (error.status === 400) {
-    title = "Payment Failed";
-    message = error.message || "The backend could not process this payment.";
-  } else if (error.status === 404) {
-    title = "Resource Not Found";
-    message = error.message;
-  } else if (error.status === 401) {
-    title = "Transaction Failed";
-    message = "Invalid Pin. Please enter the correct PIN and try again.";
-  }
 
+    title = "Payment Declined";
+
+    message = "We were unable to process this transaction due to security checks. Please try again later. If you believe this was declined in error, please contact your bank.";
+
+} else if (error.status === 400) {
+
+    title = "Payment Failed";
+
+    message = "We were unable to complete this transaction. Please try again later.";
+
+} else if (error.status === 404) {
+
+    title = "Unable to Process Payment";
+
+    message = "We were unable to process this transaction. Please try again later or contact your bank if the issue persists.";
+
+} else if (error.status === 401) {
+
+    title = "Incorrect PIN";
+
+    message = "The PIN you entered is incorrect. Please verify your PIN and try again.";
+
+}
   panel.className = "panel result-panel result-failed";
   panel.innerHTML = `<div class="result-title"><div class="result-icon">×</div><div><span class="eyebrow">TRANSACTION ERROR</span><h2>${escapeHtml(title)}</h2><p class="muted">${escapeHtml(message)}</p></div></div>`;
   panel.classList.remove("hidden");

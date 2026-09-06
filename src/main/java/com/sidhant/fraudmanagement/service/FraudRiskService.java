@@ -10,8 +10,6 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.math.BigDecimal;
 
 @Service
@@ -62,8 +60,14 @@ public class FraudRiskService {
                     windowStart
             );
 
-    if (transactionCount >= rule.getThreshold().longValue()) {
-        return rule.getRiskPoints();
+    long threshold = rule.getThreshold().longValue();
+
+    if (transactionCount >= threshold) {
+
+        long flaggedTransactionNumber =
+                transactionCount - threshold + 1;
+
+        return (int) (flaggedTransactionNumber * rule.getRiskPoints());
     }
 
     return 0;

@@ -3,7 +3,7 @@ package com.sidhant.fraudmanagement.controller;
 import com.sidhant.fraudmanagement.dto.request.LoginRequest;
 import com.sidhant.fraudmanagement.dto.response.LoginResponse;
 import com.sidhant.fraudmanagement.service.AuthService;
-
+import org.springframework.security.core.Authentication;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
@@ -25,5 +25,12 @@ public class AuthController {
     ) {
         LoginResponse response = authService.login(request);
         return ResponseEntity.ok(response);
+    }
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(Authentication authentication) {
+
+        authService.logout(authentication.getName());
+
+        return ResponseEntity.ok("Logout successful");
     }
 }

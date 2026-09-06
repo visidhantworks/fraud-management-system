@@ -64,26 +64,56 @@ async function apiFetch(path, options = {}) {
     try { data = await response.text(); } catch (_) {}
   }
 
-  if (!response.ok) {
+if (!response.ok) {
+
     if (response.status === 401) {
 
-    if (logoutOn401) {
-      redirectToLogin();
+        const serverMessage = data && typeof data === "object"
+            ? (data.message || data.error || data.detail)
+            : null;
+
+        const sessionError =
+            data?.code === "SESSION_EXPIRED" ||
+            data?.code === "SESSION_INVALID";
+
+        if (sessionError) {
+            redirectToLogin();
+        }
+
+        const message = sessionError
+            ? (serverMessage || "Your session has expired. Please sign in again.")
+            : (serverMessage || "Invalid PIN.");
+
+        throw new ApiError(401, message, data);
     }
 
-    const message = logoutOn401
-      ? "Your session has expired. Please sign in again."
-      : "Invalid PIN.";
+    if (response.status === 403) {
 
-    throw new ApiError(401, message, data);
-  }
-     
+        const serverMessage = data && typeof data === "object"
+            ? (data.message || data.error || data.detail)
+            : null;
+
+        if (data?.code === "PAYMENT_BLOCKED") {
+            redirectToLogin();
+        }
+
+        throw new ApiError(
+            403,
+            serverMessage || friendlyHttpMessage(403),
+            data
+        );
+    }
+
     const serverMessage = data && typeof data === "object"
-      ? (data.message || data.error || data.detail)
-      : null;
-    throw new ApiError(response.status, serverMessage || friendlyHttpMessage(response.status), data);
-  }
+        ? (data.message || data.error || data.detail)
+        : null;
 
+    throw new ApiError(
+        response.status,
+        serverMessage || friendlyHttpMessage(response.status),
+        data
+    );
+}
   return data;
 }
 
@@ -104,6 +134,7 @@ const API = {
     authenticated: false,
     body: JSON.stringify({ email, password })
   }),
+  logout:() => apiFetch("/api/auth/logout", {method: "POST"}),
 
   makePayment: (payload) => apiFetch("/api/transactions", {
   method: "POST",

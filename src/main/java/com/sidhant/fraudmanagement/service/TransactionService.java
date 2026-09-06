@@ -2,7 +2,7 @@ package com.sidhant.fraudmanagement.service;
 
 import com.sidhant.fraudmanagement.dto.request.PaymentRequest;
 import com.sidhant.fraudmanagement.dto.response.TransactionResponse;
-
+import com.sidhant.fraudmanagement.entity.ActiveSession;
 import com.sidhant.fraudmanagement.entity.FraudAssessment;
 import com.sidhant.fraudmanagement.entity.FraudRuleResult;
 import com.sidhant.fraudmanagement.entity.Transaction;
@@ -18,11 +18,13 @@ import com.sidhant.fraudmanagement.exception.InvalidPinException;
 import com.sidhant.fraudmanagement.exception.TransactionBlockedException;
 import com.sidhant.fraudmanagement.exception.TransactionFailedException;
 import com.sidhant.fraudmanagement.exception.UserNotFoundException;
-
+import com.sidhant.fraudmanagement.repository.ActiveSessionRepository;
 import com.sidhant.fraudmanagement.repository.FraudAssessmentRepository;
 import com.sidhant.fraudmanagement.repository.FraudRuleResultRepository;
 import com.sidhant.fraudmanagement.repository.TransactionRepository;
 import com.sidhant.fraudmanagement.repository.UserRepository;
+
+import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -40,6 +42,7 @@ public class TransactionService {
     private final FraudRiskService fraudRiskService;
     private final FraudAssessmentRepository fraudAssessmentRepository;
     private final FraudRuleResultRepository fraudRuleResultRepository;
+    private final ActiveSessionRepository activeSessionRepository;
 
     public TransactionService(
             UserRepository userRepository,
@@ -47,7 +50,8 @@ public class TransactionService {
             PasswordEncoder passwordEncoder,
             FraudRiskService fraudRiskService,
             FraudAssessmentRepository fraudAssessmentRepository,
-            FraudRuleResultRepository fraudRuleResultRepository
+            FraudRuleResultRepository fraudRuleResultRepository,
+            ActiveSessionRepository activeSessionRepository
     ) {
         this.userRepository = userRepository;
         this.transactionRepository = transactionRepository;
@@ -55,6 +59,7 @@ public class TransactionService {
         this.fraudRiskService = fraudRiskService;
         this.fraudAssessmentRepository = fraudAssessmentRepository;
         this.fraudRuleResultRepository = fraudRuleResultRepository;
+        this.activeSessionRepository = activeSessionRepository;
     }
 
     private void saveFraudRuleResult(FraudAssessment fraudAssessment,String ruleCode,int riskPoints) {
@@ -73,7 +78,7 @@ public class TransactionService {
 
         fraudRuleResultRepository.save(result);
     }
-
+    @Transactional(noRollbackFor = {TransactionBlockedException.class , TransactionFailedException.class , InvalidPinException.class})
     public TransactionResponse makePayment(PaymentRequest request) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -90,6 +95,22 @@ public class TransactionService {
                     "Admin cannot make payments"
             );
         }
+        if(user.getTransactionLockedUntil() != null && LocalDateTime.now().isBefore(user.getTransactionLockedUntil())){
+                ActiveSession activeSession = activeSessionRepository.findByUser_IdAndActiveTrue(user.getId()).orElse(null);
+                if(activeSession != null){
+                        activeSession.setActive(false);
+                        activeSession.setLogoutAt(LocalDateTime.now());
+                        activeSessionRepository.save(activeSession);
+                }
+                throw new TransactionBlockedException("Transactions are temporarily restricted due to unusual activity.");
+        }
+        else{
+                user.setTransactionLockedUntil(null);
+                userRepository.save(user);
+        }
+
+
+
 
         boolean pinValid = passwordEncoder.matches(
                 request.getPin(),
@@ -206,23 +227,37 @@ public class TransactionService {
                 "HIGH_FAILED_ATTEMPTS",
                 failedAttemptRisk
         );
-         if (!pinValid) {
+        if (totalRisk >= 100) {
 
-            if (totalRisk >= 100) {
-                throw new TransactionBlockedException(
-                        "Transaction blocked due to high fraud risk"
-                );
-            }
+        user.setTransactionLockedUntil(LocalDateTime.now().plusMinutes(20));
+        userRepository.save(user);
+        ActiveSession activeSession = activeSessionRepository
+                .findByUser_IdAndActiveTrue(user.getId())
+                .orElse(null);
 
-            if (totalRisk >= 75) {
-                throw new TransactionFailedException(
-                        "Transaction failed due to high fraud risk"
-                );
-            }
-
-            throw new InvalidPinException("Invalid PIN");
+        if (activeSession != null) {
+                activeSession.setActive(false);
+                activeSession.setLogoutAt(LocalDateTime.now());
+                activeSessionRepository.save(activeSession);
         }
 
+        throw new TransactionBlockedException(
+                "Transaction blocked due to security checks. Please sign in again."
+        );
+        }
+
+        if (totalRisk >= 75) {
+
+        throw new TransactionFailedException(
+                "Transaction failed due to high fraud risk"
+        );
+        }
+
+        if (!pinValid) {
+
+        throw new InvalidPinException("Invalid PIN");
+        }
+ 
 
         return new TransactionResponse(
                 savedTransaction.getTransactionId(),

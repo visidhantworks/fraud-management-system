@@ -9,4 +9,5 @@ public interface FraudAssessmentRepository
         extends JpaRepository<FraudAssessment, Long> {
 
     Optional<FraudAssessment> findByTransaction_Id(Long transactionId);
+    
 }
