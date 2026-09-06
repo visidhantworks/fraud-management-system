@@ -1714,10 +1714,13 @@ This architecture provides a foundation for extending the application toward a m
 
 ---
 
-## License
+## Live Demo
 
-Add the project's chosen license here before publishing the repository publicly.
+The deployed application is available at:
 
+**https://fraud-management-system-tvry.onrender.com/frontend/login.html**
+
+ 
 ---
 
 ## Author
