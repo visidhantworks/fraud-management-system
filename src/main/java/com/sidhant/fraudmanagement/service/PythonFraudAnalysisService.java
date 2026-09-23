@@ -13,7 +13,7 @@ public class PythonFraudAnalysisService {
 
     public PythonFraudAnalysisService(RestClient.Builder restClientBuilder) {
         this.restClient = restClientBuilder
-                .baseUrl("http://127.0.0.1:8001")
+                .baseUrl(System.getenv("PYTHON_ANALYSIS_URL"))
                 .build();
     }
     public PythonFraudAnalysisResponse analyze(PythonFraudAnalysisRequest request) {
