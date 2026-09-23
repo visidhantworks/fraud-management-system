@@ -27,7 +27,7 @@ public class Transaction {
 
     private Double longitude;
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 30   )
     private TransactionStatus status;
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

@@ -1,6 +1,7 @@
 package com.sidhant.fraudmanagement.controller;
 
 import com.sidhant.fraudmanagement.dto.request.PaymentRequest;
+import com.sidhant.fraudmanagement.dto.request.SecurityChallengeRequest;
 import com.sidhant.fraudmanagement.dto.response.TransactionResponse;
 import com.sidhant.fraudmanagement.service.TransactionService;
 
@@ -37,5 +38,15 @@ public class TransactionController {
         return ResponseEntity.ok(
                 transactionService.getMyTransactions()
         );
+    }
+    @PostMapping("/security-challenge")
+    public ResponseEntity<TransactionResponse> verifySecurityChallenge(
+            @Valid @RequestBody SecurityChallengeRequest request
+    ) {
+
+        TransactionResponse transactionResponse =
+                transactionService.verifySecurityChallenge(request);
+
+        return ResponseEntity.ok(transactionResponse);
     }
 }

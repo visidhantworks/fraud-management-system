@@ -18,19 +18,38 @@ public class DataSeeder {
     ) {
         return args -> {
             userRepository.findById(1L).ifPresent(user -> {
-            user.setPasswordHash(passwordEncoder.encode("password123"));
-            userRepository.save(user);
-             });
+        user.setPasswordHash(passwordEncoder.encode("password123"));
 
-            userRepository.findById(2L).ifPresent(user -> {
-                user.setPasswordHash(passwordEncoder.encode("password456"));
-                userRepository.save(user);
-                });
+        user.setSecurityQuestion(
+                "What was the name of your first school?"
+        );
 
-            userRepository.findById(3L).ifPresent(user -> {
-                user.setPasswordHash(passwordEncoder.encode("admin123"));
-                userRepository.save(user);
-            });
+        user.setSecurityAnswerHash(
+                passwordEncoder.encode("DPS")
+        );
+
+        userRepository.save(user);
+    });
+
+    userRepository.findById(2L).ifPresent(user -> {
+        user.setPasswordHash(passwordEncoder.encode("password456"));
+
+        user.setSecurityQuestion(
+                "What is the name of your first pet?"
+        );
+
+        user.setSecurityAnswerHash(
+                passwordEncoder.encode("Leo")
+        );
+
+        userRepository.save(user);
+    });
+
+    userRepository.findById(3L).ifPresent(user -> {
+        user.setPasswordHash(passwordEncoder.encode("admin123"));
+
+        userRepository.save(user);
+    });
             if (userRepository.count() == 0) {
 
                 User user1 = new User(

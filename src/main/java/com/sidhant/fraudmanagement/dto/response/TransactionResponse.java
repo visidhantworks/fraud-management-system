@@ -14,6 +14,8 @@ public class TransactionResponse {
     private Double longitude;
     private TransactionStatus status;
     private LocalDateTime createdAt;
+    private String securityQuestion;
+    private String message;
 
     public TransactionResponse(String transactionId,
                                Long userId,
@@ -21,7 +23,9 @@ public class TransactionResponse {
                                Double latitude,
                                Double longitude,
                                TransactionStatus status,
-                               LocalDateTime createdAt) {
+                               LocalDateTime createdAt,
+                               String securityQuestion,
+                               String message) {
         this.transactionId = transactionId;
         this.userId = userId;
         this.amount = amount;
@@ -29,6 +33,29 @@ public class TransactionResponse {
         this.longitude = longitude;
         this.status = status;
         this.createdAt = createdAt;
+        this.securityQuestion = securityQuestion;
+        this.message = message;
+    }
+    public TransactionResponse(
+        String transactionId,
+        Long userId,
+        BigDecimal amount,
+        Double latitude,
+        Double longitude,
+        TransactionStatus status,
+        LocalDateTime createdAt) {
+
+    this(
+            transactionId,
+            userId,
+            amount,
+            latitude,
+            longitude,
+            status,
+            createdAt,
+            null,
+            null
+            );
     }
 
     public String getTransactionId() {
@@ -57,5 +84,11 @@ public class TransactionResponse {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+    public String getSecurityQuestion(){
+        return securityQuestion;
+    }
+    public String getMessage(){
+        return this.message;
     }
 }

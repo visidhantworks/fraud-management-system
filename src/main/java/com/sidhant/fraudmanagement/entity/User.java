@@ -32,6 +32,11 @@ public class User {
     private String passwordHash;
     @Column(name = "transaction_locked_until")
     private LocalDateTime transactionLockedUntil;
+    @Column(name = "security_question")
+    private String securityQuestion;
+
+    @Column(name = "security_answer_hash")
+    private String securityAnswerHash;
 
     public User() {
     }
@@ -100,5 +105,20 @@ public class User {
     }
     public void setTransactionLockedUntil(LocalDateTime transactionLockedUntil) {
     this.transactionLockedUntil = transactionLockedUntil;
+    }
+    public String getSecurityQuestion() {
+    return securityQuestion;
+    }
+
+    public void setSecurityQuestion(String securityQuestion) {
+        this.securityQuestion = securityQuestion;
+    }
+
+    public String getSecurityAnswerHash() {
+        return securityAnswerHash;
+    }
+
+    public void setSecurityAnswerHash(String securityAnswerHash) {
+        this.securityAnswerHash = securityAnswerHash;
     }
 }

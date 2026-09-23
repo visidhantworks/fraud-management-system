@@ -5,61 +5,632 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FRM | Fraud Risk Monitoring</title>
   <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Behavior Analysis modal styles -->
+  <style>
+    .behavior-button {
+      border: 0;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 999px;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .behavior-button:hover {
+      opacity: 0.85;
+      transform: translateY(-1px);
+    }
+
+    .behavior-normal {
+      background: rgba(34, 197, 94, 0.14);
+      color: #16a34a;
+    }
+
+    .behavior-slightly-abnormal {
+      background: rgba(234, 179, 8, 0.16);
+      color: #ca8a04;
+    }
+
+    .behavior-highly-abnormal {
+      background: rgba(239, 68, 68, 0.14);
+      color: #dc2626;
+    }
+
+    .behavior-unavailable {
+      background: rgba(107, 114, 128, 0.12);
+      color: #6b7280;
+      cursor: default;
+    }
+
+    .behavior-modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(4px);
+    }
+
+    .behavior-modal-overlay.hidden {
+      display: none;
+    }
+
+    .behavior-modal {
+      width: min(760px, 100%);
+      max-height: calc(100vh - 48px);
+      overflow-y: auto;
+      background: var(--surface, #ffffff);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 16px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.25);
+    }
+
+    .behavior-modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 22px 24px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .behavior-modal-header h2 {
+      margin: 4px 0 0;
+    }
+
+    .behavior-close {
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      font-size: 24px;
+      line-height: 1;
+      padding: 4px 8px;
+      border-radius: 8px;
+    }
+
+    .behavior-close:hover {
+      background: rgba(0, 0, 0, 0.06);
+    }
+
+    .behavior-modal-body {
+      padding: 24px;
+    }
+
+    .behavior-hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .behavior-hero-card {
+      padding: 18px;
+      border-radius: 12px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      background: rgba(0, 0, 0, 0.02);
+    }
+
+    .behavior-hero-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      opacity: 0.65;
+    }
+
+    .behavior-risk-value {
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .behavior-category-value {
+      display: inline-block;
+      font-weight: 800;
+    }
+
+    .behavior-section {
+      margin-top: 24px;
+    }
+
+    .behavior-section-title {
+      margin: 0 0 12px;
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      opacity: 0.7;
+    }
+
+    .behavior-metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .behavior-metric {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 13px 16px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+    }
+
+    .behavior-metric:nth-child(odd) {
+      border-right: 1px solid rgba(0, 0, 0, 0.07);
+    }
+
+    .behavior-metric:nth-last-child(-n + 2) {
+      border-bottom: 0;
+    }
+
+    .behavior-metric-label {
+      opacity: 0.7;
+    }
+
+    .behavior-metric-value {
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .behavior-modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      padding-top: 24px;
+    }
+
+    @media (max-width: 700px) {
+      .behavior-modal-overlay {
+        padding: 12px;
+      }
+
+      .behavior-modal {
+        max-height: calc(100vh - 24px);
+      }
+
+      .behavior-modal-header,
+      .behavior-modal-body {
+        padding: 18px;
+      }
+
+      .behavior-hero {
+        grid-template-columns: 1fr;
+      }
+
+      .behavior-metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .behavior-metric:nth-child(odd) {
+        border-right: 0;
+      }
+
+      .behavior-metric:nth-last-child(-n + 2) {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+      }
+
+      .behavior-metric:last-child {
+        border-bottom: 0;
+      }
+    }
+  </style>
 </head>
+
 <body>
   <div class="app-shell">
+
     <aside class="sidebar" id="sidebar">
-      <div class="sidebar-brand"><div class="brand-mark">FR</div><div><strong>FRM</strong><small>Payment Security</small></div></div>
-      <nav><a class="nav-link active" href="admin-dashboard.html">⌁ <span>Fraud Monitoring</span></a></nav>
+      <div class="sidebar-brand">
+        <div class="brand-mark">FR</div>
+        <div>
+          <strong>FRM</strong>
+          <small>Payment Security</small>
+        </div>
+      </div>
+
+      <nav>
+        <a class="nav-link active" href="admin-dashboard.html">
+          ⌁ <span>Fraud Monitoring</span>
+        </a>
+      </nav>
+
       <div class="sidebar-bottom">
-        <div class="user-mini"><div class="avatar" id="sidebarAvatar">A</div><div><strong id="sidebarName">Admin</strong><small id="sidebarRole">ADMIN</small></div></div>
-        <button class="nav-link logout-btn" id="logoutButton">↪ <span>Logout</span></button>
+        <div class="user-mini">
+          <div class="avatar" id="sidebarAvatar">A</div>
+          <div>
+            <strong id="sidebarName">Admin</strong>
+            <small id="sidebarRole">ADMIN</small>
+          </div>
+        </div>
+
+        <button class="nav-link logout-btn" id="logoutButton">
+          ↪ <span>Logout</span>
+        </button>
       </div>
     </aside>
 
+
     <main class="main-content">
+
       <header class="topbar">
         <button class="icon-btn mobile-menu" id="menuButton">☰</button>
-        <div><span class="eyebrow">ADMIN CONSOLE</span><h1>Fraud Risk Monitoring</h1></div>
-        <div class="topbar-user"><div class="avatar" id="topAvatar">A</div></div>
+
+        <div>
+          <span class="eyebrow">ADMIN CONSOLE</span>
+          <h1>Fraud Risk Monitoring</h1>
+        </div>
+
+        <div class="topbar-user">
+          <div class="avatar" id="topAvatar">A</div>
+        </div>
       </header>
+
 
       <div id="adminAlert" class="alert hidden"></div>
 
+
       <section class="stats-grid">
-        <div class="stat-card"><span class="stat-label">Total Transactions</span><strong id="totalCount">—</strong><span class="stat-meta">All monitored payments</span></div>
-        <div class="stat-card success-card"><span class="stat-label">Successful</span><strong id="successCount">—</strong><span class="stat-meta">Risk score &lt; 75</span></div>
-        <div class="stat-card failed-card"><span class="stat-label">Failed</span><strong id="failedCount">—</strong><span class="stat-meta">Risk score 75–99</span></div>
-        <div class="stat-card blocked-card"><span class="stat-label">Blocked</span><strong id="blockedCount">—</strong><span class="stat-meta">Risk score ≥ 100</span></div>
-        <div class="stat-card risk-card"><span class="stat-label">High Risk</span><strong id="highRiskCount">—</strong><span class="stat-meta">Risk score ≥ 75</span></div>
+        <div class="stat-card">
+          <span class="stat-label">Total Transactions</span>
+          <strong id="totalCount">—</strong>
+          <span class="stat-meta">All monitored payments</span>
+        </div>
+
+        <div class="stat-card success-card">
+          <span class="stat-label">Successful</span>
+          <strong id="successCount">—</strong>
+          <span class="stat-meta">Risk score &lt; 75</span>
+        </div>
+
+        <div class="stat-card failed-card">
+          <span class="stat-label">Failed</span>
+          <strong id="failedCount">—</strong>
+          <span class="stat-meta">Risk score 75–99</span>
+        </div>
+
+        <div class="stat-card blocked-card">
+          <span class="stat-label">Blocked</span>
+          <strong id="blockedCount">—</strong>
+          <span class="stat-meta">Risk score ≥ 100</span>
+        </div>
+
+        <div class="stat-card risk-card">
+          <span class="stat-label">High Risk</span>
+          <strong id="highRiskCount">—</strong>
+          <span class="stat-meta">Risk score ≥ 75</span>
+        </div>
       </section>
+
 
       <section class="panel">
+
         <div class="panel-header monitoring-header">
-          <div><span class="eyebrow">LIVE DATA</span><h2>Transaction Monitoring</h2></div>
-          <button class="btn btn-secondary" id="refreshTransactions">↻ Refresh</button>
+          <div>
+            <span class="eyebrow">LIVE DATA</span>
+            <h2>Transaction Monitoring</h2>
+          </div>
+
+          <button class="btn btn-secondary" id="refreshTransactions">
+            ↻ Refresh
+          </button>
         </div>
+
 
         <div class="filters">
-          <div class="search-box"><span>⌕</span><input id="searchInput" type="search" placeholder="Search ID, user, email, location..."></div>
-          <select id="statusFilter"><option value="ALL">All statuses</option><option value="SUCCESS">Success</option><option value="FAILED">Failed</option><option value="BLOCKED">Blocked</option></select>
-          <select id="riskSort"><option value="NONE">Risk: default</option><option value="DESC">Risk: high → low</option><option value="ASC">Risk: low → high</option></select>
-          <select id="dateSort"><option value="DESC">Date: newest first</option><option value="ASC">Date: oldest first</option></select>
+
+          <div class="search-box">
+            <span>⌕</span>
+            <input
+              id="searchInput"
+              type="search"
+              placeholder="Search ID, user, email, location..."
+            >
+          </div>
+
+          <select id="statusFilter">
+            <option value="ALL">All statuses</option>
+            <option value="SUCCESS">Success</option>
+            <option value="FAILED">Failed</option>
+            <option value="BLOCKED">Blocked</option>
+          </select>
+
+          <select id="riskSort">
+            <option value="NONE">Risk: default</option>
+            <option value="DESC">Risk: high → low</option>
+            <option value="ASC">Risk: low → high</option>
+          </select>
+
+          <select id="dateSort">
+            <option value="DESC">Date: newest first</option>
+            <option value="ASC">Date: oldest first</option>
+          </select>
+
         </div>
 
-        <div id="tableLoading" class="loading-state"><span class="spinner"></span><span>Loading transactions…</span></div>
-        <div id="tableEmpty" class="empty-state hidden"><div class="empty-icon">⌁</div><h3>No transactions found</h3><p>Try changing your search or filters.</p></div>
-        <div class="table-wrap" id="transactionsTableWrap">
-          <table>
-            <thead><tr><th>Transaction ID</th><th>User</th><th>Email</th><th>Amount</th><th>Location</th><th>Risk Score</th><th>Triggered Rules</th><th>Status</th><th>Date/Time</th></tr></thead>
-            <tbody id="transactionsBody"></tbody>
-          </table>
+
+        <div id="tableLoading" class="loading-state">
+          <span class="spinner"></span>
+          <span>Loading transactions…</span>
         </div>
+
+        <div id="tableEmpty" class="empty-state hidden">
+          <div class="empty-icon">⌁</div>
+          <h3>No transactions found</h3>
+          <p>Try changing your search or filters.</p>
+        </div>
+
+
+        <div class="table-wrap" id="transactionsTableWrap">
+
+          <table>
+
+            <thead>
+              <tr>
+                <th>Transaction ID</th>
+                <th>User</th>
+                <th>Email</th>
+                <th>Amount</th>
+                <th>Location</th>
+                <th>Risk Score</th>
+                <th>Triggered Rules</th>
+
+                <!-- NEW -->
+                <th>Behavior</th>
+
+                <th>Status</th>
+                <th>Date/Time</th>
+              </tr>
+            </thead>
+
+            <tbody id="transactionsBody"></tbody>
+
+          </table>
+
+        </div>
+
       </section>
+
     </main>
   </div>
+
+
+  <!-- =========================================================
+       PYTHON BEHAVIOR ANALYSIS MODAL
+       ========================================================= -->
+
+  <div
+    id="behaviorModalOverlay"
+    class="behavior-modal-overlay hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="behaviorModalTitle"
+  >
+
+    <div class="behavior-modal">
+
+      <div class="behavior-modal-header">
+
+        <div>
+          <span class="eyebrow">PYTHON ANALYSIS</span>
+          <h2 id="behaviorModalTitle">Python Behavior Analysis</h2>
+        </div>
+
+        <button
+          type="button"
+          class="behavior-close"
+          id="behaviorModalClose"
+          aria-label="Close behavior analysis"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <div class="behavior-modal-body">
+
+        <div class="muted" id="behaviorTransactionId">
+          Transaction: —
+        </div>
+
+
+        <div class="behavior-hero">
+
+          <div class="behavior-hero-card">
+            <span class="behavior-hero-label">
+              Behavior Category
+            </span>
+
+            <span
+              id="behaviorCategory"
+              class="behavior-category-value"
+            >
+              —
+            </span>
+          </div>
+
+
+          <div class="behavior-hero-card">
+            <span class="behavior-hero-label">
+              Behavioral Risk
+            </span>
+
+            <span
+              id="behavioralRisk"
+              class="behavior-risk-value"
+            >
+              —
+            </span>
+          </div>
+
+        </div>
+
+
+        <section class="behavior-section">
+
+          <h3 class="behavior-section-title">
+            Transaction Behavior
+          </h3>
+
+          <div class="behavior-metrics">
+
+            <div class="behavior-metric">
+              <span class="behavior-metric-label">
+                Average Amount
+              </span>
+              <span class="behavior-metric-value" id="behaviorAverageAmount">
+                —
+              </span>
+            </div>
+
+            <div class="behavior-metric">
+              <span class="behavior-metric-label">
+                Maximum Amount
+              </span>
+              <span class="behavior-metric-value" id="behaviorMaximumAmount">
+                —
+              </span>
+            </div>
+
+            <div class="behavior-metric">
+              <span class="behavior-metric-label">
+                Minimum Amount
+              </span>
+              <span class="behavior-metric-value" id="behaviorMinimumAmount">
+                —
+              </span>
+            </div>
+
+            <div class="behavior-metric">
+              <span class="behavior-metric-label">
+                Transaction Count
+              </span>
+              <span class="behavior-metric-value" id="behaviorTransactionCount">
+                —
+              </span>
+            </div>
+
+            <div class="behavior-metric">
+              <span class="behavior-metric-label">
+                Successful Transactions
+              </span>
+              <span class="behavior-metric-value" id="behaviorSuccessfulTransactions">
+                —
+              </span>
+            </div>
+
+            <div class="behavior-metric">
+              <span class="behavior-metric-label">
+                Failed Transactions
+              </span>
+              <span class="behavior-metric-value" id="behaviorFailedTransactions">
+                —
+              </span>
+            </div>
+
+            <div class="behavior-metric">
+              <span class="behavior-metric-label">
+                Failed Transaction Ratio
+              </span>
+              <span class="behavior-metric-value" id="behaviorFailedTransactionRatio">
+                —
+              </span>
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <section class="behavior-section">
+
+          <h3 class="behavior-section-title">
+            Risk Components
+          </h3>
+
+          <div class="behavior-metrics">
+
+            <div class="behavior-metric">
+              <span class="behavior-metric-label">
+                Amount Deviation
+              </span>
+              <span class="behavior-metric-value" id="behaviorAmountDeviation">
+                —
+              </span>
+            </div>
+
+            <div class="behavior-metric">
+              <span class="behavior-metric-label">
+                Amount Behavior Risk
+              </span>
+              <span class="behavior-metric-value" id="behaviorAmountRisk">
+                —
+              </span>
+            </div>
+
+            <div class="behavior-metric">
+              <span class="behavior-metric-label">
+                Failure Behavior Risk
+              </span>
+              <span class="behavior-metric-value" id="behaviorFailureRisk">
+                —
+              </span>
+            </div>
+
+            <div class="behavior-metric">
+              <span class="behavior-metric-label">
+                Frequency Behavior Risk
+              </span>
+              <span class="behavior-metric-value" id="behaviorFrequencyRisk">
+                —
+              </span>
+            </div>
+
+            <div class="behavior-metric">
+              <span class="behavior-metric-label">
+                Location Behavior Risk
+              </span>
+              <span class="behavior-metric-value" id="behaviorLocationRisk">
+                —
+              </span>
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <div class="behavior-modal-footer">
+
+          <button
+            type="button"
+            class="btn btn-secondary"
+            id="behaviorModalCloseButton"
+          >
+            Close
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
   <script src="js/api.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/admin-dashboard.js"></script>
+
 </body>
 </html>

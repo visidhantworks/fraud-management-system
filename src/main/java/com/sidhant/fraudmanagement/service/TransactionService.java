@@ -1,6 +1,10 @@
 package com.sidhant.fraudmanagement.service;
 
 import com.sidhant.fraudmanagement.dto.request.PaymentRequest;
+import com.sidhant.fraudmanagement.dto.request.PythonFraudAnalysisRequest;
+import com.sidhant.fraudmanagement.dto.request.PythonTransactionData;
+import com.sidhant.fraudmanagement.dto.request.SecurityChallengeRequest;
+import com.sidhant.fraudmanagement.dto.response.PythonFraudAnalysisResponse;
 import com.sidhant.fraudmanagement.dto.response.TransactionResponse;
 import com.sidhant.fraudmanagement.entity.ActiveSession;
 import com.sidhant.fraudmanagement.entity.FraudAssessment;
@@ -43,6 +47,7 @@ public class TransactionService {
     private final FraudAssessmentRepository fraudAssessmentRepository;
     private final FraudRuleResultRepository fraudRuleResultRepository;
     private final ActiveSessionRepository activeSessionRepository;
+    private final PythonFraudAnalysisService pythonFraudAnalysisService;
 
     public TransactionService(
             UserRepository userRepository,
@@ -51,7 +56,8 @@ public class TransactionService {
             FraudRiskService fraudRiskService,
             FraudAssessmentRepository fraudAssessmentRepository,
             FraudRuleResultRepository fraudRuleResultRepository,
-            ActiveSessionRepository activeSessionRepository
+            ActiveSessionRepository activeSessionRepository,
+            PythonFraudAnalysisService pythonFraudAnalysisService
     ) {
         this.userRepository = userRepository;
         this.transactionRepository = transactionRepository;
@@ -60,6 +66,7 @@ public class TransactionService {
         this.fraudAssessmentRepository = fraudAssessmentRepository;
         this.fraudRuleResultRepository = fraudRuleResultRepository;
         this.activeSessionRepository = activeSessionRepository;
+        this.pythonFraudAnalysisService = pythonFraudAnalysisService;
     }
 
     private void saveFraudRuleResult(FraudAssessment fraudAssessment,String ruleCode,int riskPoints) {
@@ -116,8 +123,78 @@ public class TransactionService {
                 request.getPin(),
                 user.getPinHash()
         );
+        List<Transaction> transactionHistory = transactionRepository.findTop20ByUserIdOrderByCreatedAtDesc(user.getId());
+        System.out.println("===== TRANSACTION HISTORY DEBUG =====");
+        System.out.println("User ID: " + user.getId());
+        System.out.println("History Size: " + transactionHistory.size());
 
-         
+        for (Transaction transaction : transactionHistory) {
+        System.out.println(
+                transaction.getId()
+                + " | "
+                + transaction.getAmount()
+                + " | "
+                + transaction.getStatus()
+                + " | "
+                + transaction.getCreatedAt()
+        );
+        }
+        PythonTransactionData currentTransaction = new PythonTransactionData(
+                        request.getAmount(),
+                        "SUCCESS",
+                        request.getLatitude(),
+                        request.getLongitude(),
+                        LocalDateTime.now()
+        );
+        List<PythonTransactionData> history =transactionHistory.stream().map(transaction -> new PythonTransactionData(
+                                                transaction.getAmount(),
+                                                transaction.getStatus().name(),
+                                                transaction.getLatitude(),
+                                                transaction.getLongitude(),
+                                                transaction.getCreatedAt()
+        )).toList();
+        PythonFraudAnalysisRequest pythonRequest = new PythonFraudAnalysisRequest(user.getId() , currentTransaction , history);
+        PythonFraudAnalysisResponse pythonResponse = pythonFraudAnalysisService.analyze(pythonRequest);
+        double pythonBehaviorRisk = pythonResponse.getBehavioralRisk();
+        System.out.println("===== PYTHON REQUEST DEBUG =====");
+        System.out.println("User ID: " + pythonRequest.getUserId());
+        System.out.println("History Size: " + pythonRequest.getTransactionHistory().size());
+
+        for (PythonTransactionData transaction : pythonRequest.getTransactionHistory()) {
+        System.out.println(
+                transaction.getAmount()
+                + " | "
+                + transaction.getStatus()
+                + " | "
+                + transaction.getCreatedAt()
+        );
+        }
+
+        System.out.println("===== PYTHON FRAUD ANALYSIS =====");
+        System.out.println("Average Amount: "
+                + pythonResponse.getAverageAmount());
+
+        System.out.println("Maximum Amount: "
+                + pythonResponse.getMaximumAmount());
+
+        System.out.println("Minimum Amount: "
+                + pythonResponse.getMinimumAmount());
+
+        System.out.println("Transaction Count: "
+                + pythonResponse.getTransactionCount());
+
+        System.out.println("Successful Transactions: "
+                + pythonResponse.getSuccessfulTransactions());
+
+        System.out.println("Failed Transactions: "
+                + pythonResponse.getFailedTransactions());
+
+        System.out.println("Failed Transaction Ratio: "
+                + pythonResponse.getFailedTransactionRatio());
+
+        System.out.println("Amount Deviation: "
+                + pythonResponse.getAmountDeviationPercentage()
+                + "%");
 
         int amountRisk =
                 fraudRiskService.calculateAmountRisk(
@@ -163,21 +240,28 @@ public class TransactionService {
                         + frequencyRisk
                         + locationRisk
                         + failedAttemptRisk;
+        double combinedRisk = totalRisk + pythonBehaviorRisk;
+        System.out.println("===== COMBINED FRAUD RISK =====");
 
-        System.out.println(
-                "Total Risk: " + totalRisk
-        );
+        System.out.println("Spring FRM Risk: " + totalRisk );
+        System.out.println("Python Behavorial Risk:" + pythonBehaviorRisk);
+        System.out.println("Combined Risk:"+combinedRisk);
+        System.out.println("Python Behavior Category:"+pythonResponse.getBehaviorCategory());
 
-        
+
         TransactionStatus status;
 
-        if (totalRisk >= 100) {
-            status = TransactionStatus.BLOCKED;
-        } else if (!pinValid || totalRisk >= 75) {
-            status = TransactionStatus.FAILED;
+        if (combinedRisk >= 200) {
+        status = TransactionStatus.BLOCKED;
+        } else if (!pinValid) {
+        status = TransactionStatus.FAILED;
+        } else if (combinedRisk >= 175) {
+        status = TransactionStatus.SECURITY_CHALLENGE_REQUIRED;
         } else {
-            status = TransactionStatus.SUCCESS;
+        status = TransactionStatus.SUCCESS;
         }
+
+
 
         Transaction transaction = new Transaction();
 
@@ -194,13 +278,47 @@ public class TransactionService {
 
         Transaction savedTransaction =
         transactionRepository.save(transaction);
-
         FraudAssessment assessment = new FraudAssessment();
 
         assessment.setTransaction(savedTransaction);
+
         assessment.setRiskScore(totalRisk);
+        assessment.setSpringRiskScore((double) totalRisk);
+        assessment.setPythonBehavioralRisk(pythonBehaviorRisk);
+        assessment.setCombinedRisk(combinedRisk);
+
+        // Save detailed Python behavioral analysis
+        assessment.setAverageAmount(pythonResponse.getAverageAmount());
+
+        assessment.setMaximumAmount(pythonResponse.getMaximumAmount());
+
+        assessment.setMinimumAmount(pythonResponse.getMinimumAmount());
+
+        assessment.setTransactionCount(pythonResponse.getTransactionCount());
+
+        assessment.setSuccessfulTransactions(pythonResponse.getSuccessfulTransactions());
+
+        assessment.setFailedTransactions(pythonResponse.getFailedTransactions());
+
+        assessment.setFailedTransactionRatio(pythonResponse.getFailedTransactionRatio());
+
+        assessment.setAmountDeviationPercentage(pythonResponse.getAmountDeviationPercentage());
+
+        assessment.setAmountBehaviorRisk(pythonResponse.getAmountBehaviorRisk());
+
+        assessment.setFailureBehaviorRisk(pythonResponse.getFailureBehaviorRisk());
+
+        assessment.setFrequencyBehaviorRisk(pythonResponse.getFrequencyBehaviorRisk());
+
+        assessment.setLocationBehaviorRisk(pythonResponse.getLocationBehaviorRisk());
+
+        assessment.setBehaviorCategory(pythonResponse.getBehaviorCategory());
+        assessment.setSecurityChallengeRequired(status == TransactionStatus.SECURITY_CHALLENGE_REQUIRED);
+        assessment.setSecurityChallengePassed(false);
+
         assessment.setDecision(status.name());
         assessment.setCreatedAt(LocalDateTime.now());
+
 
         FraudAssessment savedAssessment =
                 fraudAssessmentRepository.save(assessment);
@@ -227,7 +345,7 @@ public class TransactionService {
                 "HIGH_FAILED_ATTEMPTS",
                 failedAttemptRisk
         );
-        if (totalRisk >= 100) {
+        if (combinedRisk >= 200) {
 
         user.setTransactionLockedUntil(LocalDateTime.now().plusMinutes(20));
         userRepository.save(user);
@@ -246,18 +364,25 @@ public class TransactionService {
         );
         }
 
-        if (totalRisk >= 75) {
 
-        throw new TransactionFailedException(
-                "Transaction failed due to high fraud risk"
-        );
-        }
 
         if (!pinValid) {
-
         throw new InvalidPinException("Invalid PIN");
         }
- 
+
+        if (status == TransactionStatus.SECURITY_CHALLENGE_REQUIRED) {
+        return new TransactionResponse(
+                savedTransaction.getTransactionId(),
+                savedTransaction.getUser().getId(),
+                savedTransaction.getAmount(),
+                savedTransaction.getLatitude(),
+                savedTransaction.getLongitude(),
+                savedTransaction.getStatus(),
+                savedTransaction.getCreatedAt(),
+                user.getSecurityQuestion(),
+                "Additional authentication required."
+        );
+        }
 
         return new TransactionResponse(
                 savedTransaction.getTransactionId(),
@@ -266,9 +391,97 @@ public class TransactionService {
                 savedTransaction.getLatitude(),
                 savedTransaction.getLongitude(),
                 savedTransaction.getStatus(),
-                savedTransaction.getCreatedAt()
+                savedTransaction.getCreatedAt(),
+                null,
+                "Payment successful."
+        );
+}
+@Transactional
+public TransactionResponse verifySecurityChallenge(SecurityChallengeRequest request) {
+
+    Authentication authentication =
+            SecurityContextHolder.getContext().getAuthentication();
+
+    String email = authentication.getName();
+
+    User user = userRepository.findByEmail(email)
+            .orElseThrow(() ->
+                    new UserNotFoundException("User not found"));
+
+    Transaction transaction =
+            transactionRepository.findByTransactionIdAndUserId(
+                    request.getTransactionId(),
+                    user.getId()
+            )
+            .orElseThrow(() ->
+                    new TransactionFailedException(
+                            "Transaction not found"
+                    ));
+
+    if (transaction.getStatus()
+            != TransactionStatus.SECURITY_CHALLENGE_REQUIRED) {
+
+        throw new TransactionFailedException(
+                "Security challenge is not required for this transaction"
         );
     }
+
+    FraudAssessment assessment =
+            fraudAssessmentRepository.findByTransaction_Id(
+                    transaction.getId()
+            )
+            .orElseThrow(() ->
+                    new TransactionFailedException(
+                            "Fraud assessment not found"
+                    ));
+
+    boolean answerCorrect =
+            passwordEncoder.matches(
+                    request.getAnswer(),
+                    user.getSecurityAnswerHash()
+            );
+
+    if (answerCorrect) {
+
+        transaction.setStatus(TransactionStatus.SUCCESS);
+        transactionRepository.save(transaction);
+
+        assessment.setSecurityChallengePassed(true);
+        assessment.setDecision(TransactionStatus.SUCCESS.name());
+        fraudAssessmentRepository.save(assessment);
+
+        return new TransactionResponse(
+                transaction.getTransactionId(),
+                user.getId(),
+                transaction.getAmount(),
+                transaction.getLatitude(),
+                transaction.getLongitude(),
+                transaction.getStatus(),
+                transaction.getCreatedAt(),
+                null,
+                "Security verification successful. Payment approved."
+        );
+    }
+
+    transaction.setStatus(TransactionStatus.FAILED);
+    transactionRepository.save(transaction);
+
+    assessment.setSecurityChallengePassed(false);
+    assessment.setDecision(TransactionStatus.FAILED.name());
+    fraudAssessmentRepository.save(assessment);
+
+    return new TransactionResponse(
+            transaction.getTransactionId(),
+            user.getId(),
+            transaction.getAmount(),
+            transaction.getLatitude(),
+            transaction.getLongitude(),
+            transaction.getStatus(),
+            transaction.getCreatedAt(),
+            null,
+            "Security verification failed. Payment rejected."
+    );
+}
     public List<TransactionResponse> getMyTransactions() {
 
     Authentication authentication =

@@ -244,6 +244,53 @@
 
 
       <!-- =========================
+           SECURITY CHALLENGE
+      ========================== -->
+
+      <div
+        id="securityChallenge"
+        class="hidden"
+        style="position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:1000;"
+      >
+        <div
+          class="panel"
+          style="width:100%;max-width:520px;position:relative;"
+        >
+          <div class="panel-header">
+            <div>
+              <span class="eyebrow">ADDITIONAL SECURITY</span>
+              <h2>Additional Security Verification</h2>
+            </div>
+          </div>
+
+          <p id="securityQuestion" class="muted" style="margin:0 0 18px;"></p>
+
+          <div class="field">
+            <label for="securityAnswer">Answer</label>
+            <input
+              id="securityAnswer"
+              type="text"
+              autocomplete="off"
+              placeholder="Enter your answer"
+            >
+          </div>
+
+          <div id="securityChallengeMessage" class="hidden" style="margin-top:12px;"></div>
+
+          <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
+            <button class="btn btn-secondary" id="securityCancelButton" type="button">
+              Cancel
+            </button>
+            <button class="btn btn-primary" id="securityVerifyButton" type="button">
+              <span class="button-text">Verify</span>
+              <span class="spinner hidden"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- =========================
            TRANSACTION HISTORY
       ========================== -->
 

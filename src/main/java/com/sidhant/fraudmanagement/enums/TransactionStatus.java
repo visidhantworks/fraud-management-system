@@ -4,5 +4,6 @@ public enum TransactionStatus {
 
     SUCCESS,
     FAILED,
-    BLOCKED
+    BLOCKED,
+    SECURITY_CHALLENGE_REQUIRED
 }

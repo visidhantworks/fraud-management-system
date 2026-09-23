@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupPayment();
   getUserLocation();
   setupHistory();
-   
+
 });
 
 function setIdentity(user) {
@@ -46,7 +46,7 @@ function setupPayment() {
       showAlert("Location is not available. Please allow location access.", "error");
       return;
     }
-     
+
 
 
     setButtonLoading(button, true, "Processing…");
@@ -55,7 +55,7 @@ function setupPayment() {
       // Deliberately no userId: Spring identifies the user from the JWT.
       const result = await API.makePayment({amount,pin,latitude: userLatitude,longitude: userLongitude});
       renderPaymentResult(result);
-      form.reset(); 
+      form.reset();
       await loadMyTransactions();// PIN is cleared from the form and is never persisted.
     } catch (error) {
       renderPaymentError(error);
@@ -86,10 +86,9 @@ function renderPaymentResult(tx) {
     <div class="result-grid">
       ${resultItem("Transaction ID", tx.transactionId ?? tx.id ?? "—")}
       ${resultItem("Amount", formatCurrency(tx.amount))}
-      ${resultItem("Risk Score", tx.riskScore ?? "—")}
-      ${resultItem("Location", formatLocation(tx.latitude, tx.longitude))}
+
       ${resultItem("Transaction Time", formatDate(tx.createdAt ?? tx.transactionTime ?? tx.timestamp))}
-      ${resultItem("Triggered Rules", formatRules(tx.triggeredRules))}
+
     </div>`;
   panel.classList.remove("hidden");
 }
@@ -291,7 +290,7 @@ function showAlert(message, type) {
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
 }
- 
+
 
 function getUserLocation() {
     const locationStatus = document.getElementById("locationStatus");
@@ -318,4 +317,3 @@ function getUserLocation() {
     );
 }
 
- 
